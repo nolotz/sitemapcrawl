@@ -84,22 +84,20 @@ func (r *Resolver) requestDocument(ctx context.Context, sitemap string) ([]byte,
 		return nil, err
 	}
 
-	respBody, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
-	if err != nil {
-		return nil, err
-	}
+	bodyReader := resp.Body
 
 	if !resp.Uncompressed && strings.HasSuffix(sitemap, ".gz") {
-		reader, err := gzip.NewReader(bytes.NewReader(respBody))
+		bodyReader, err = gzip.NewReader(bodyReader)
 		if err != nil {
 			return nil, err
 		}
+		defer bodyReader.Close()
+	}
 
-		respBody, err = io.ReadAll(reader)
-		if err != nil {
-			return nil, err
-		}
+	respBody, err := io.ReadAll(bodyReader)
+	if err != nil {
+		return nil, err
 	}
 
 	return respBody, nil
